@@ -50,6 +50,16 @@ Then I am instructed how to obtain and save credentials
 So that the program can access any required APIs
 ```
 
+### User checks configuration
+
+```
+As a user
+Given that I have saved credentials for the required APIs
+When I run `self-review check`
+Then the program checks that it can access the required APIs
+And reports status back to the user for each API.
+```
+
 ### User fetches recent work
 
 ```
@@ -88,6 +98,11 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Add GitHub token configuration
   - [x] Add Jira API configuration
   - [x] Provide user-friendly setup instructions
+- [ ] Implement check command for API connectivity
+  - [ ] Create GitHub API connectivity test
+  - [ ] Create Jira API connectivity test
+  - [ ] Add colored status reporting
+  - [ ] Handle and report API errors gracefully
 - [ ] Implement fetch command for data retrieval
   - [ ] Create GitHub API client using Octokit
   - [ ] Implement PR fetching with date filtering
