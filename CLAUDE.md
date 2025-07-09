@@ -18,8 +18,16 @@ Based on those descriptions the tool can also:
 - Framework: Dry
 - Code quality: StandardRB
 - Tests: RSpec
-- Dependencies: Rainbow, Octokit
-- APIs: Github, Jira
+- Dependencies: Rainbow, Octokit, RubyLLM
+- APIs: Github, Jira, Anthropic Claude, OpenAI GPT
+
+## Additional documentation
+
+- RubyLLM is a newer library so you may need to read the following docs:
+  - Installation: https://rubyllm.com/installation
+  - Configuration: https://rubyllm.com/configuration
+  - Chatting with models: https://rubyllm.com/guides/chat
+  - (and other guides are at https://rubyllm.com/guides/)
 
 ## Conventions
 
