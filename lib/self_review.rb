@@ -4,8 +4,11 @@ require "dry/container"
 require "dry/auto_inject"
 require "rainbow"
 require "octokit"
+require "yaml"
 require_relative "self_review/config"
 require_relative "self_review/api_checker"
+require_relative "self_review/github_client"
+require_relative "self_review/jira_client"
 
 module SelfReview
   class Container
@@ -161,8 +164,65 @@ module SelfReview
 
       def call(since: nil, **)
         puts Rainbow("Fetching recent work...").bright.blue
-        puts "Since: #{since || "1 month ago"}"
-        puts "This feature is not yet implemented."
+        puts
+
+        config = Config.load
+
+        if config.empty?
+          puts Rainbow("No credentials configured. Run 'self-review setup' first.").red
+          return
+        end
+
+        since_date = since ? Date.parse(since) : nil
+        github_prs = []
+        jira_tickets = []
+
+        # Fetch GitHub PRs
+        if config["github_token"] && !config["github_token"].empty?
+          puts "Fetching from GitHub..."
+          github_prs = GitHubClient.fetch_merged_prs(config["github_token"], since_date)
+          puts "Found #{github_prs.length} merged PRs"
+        end
+
+        # Fetch Jira tickets
+        if config["jira_url"] && !config["jira_url"].empty?
+          puts "Fetching from Jira..."
+          jira_tickets = JiraClient.fetch_done_tickets(
+            config["jira_url"],
+            config["jira_username"],
+            config["jira_token"],
+            since_date
+          )
+          puts "Found #{jira_tickets.length} completed tickets"
+        end
+
+        # Generate YAML file
+        timestamp = Time.now.strftime("%y%m%d-%H%M%S")
+        filename = "recent-work-#{timestamp}.yml"
+
+        yaml_content = generate_yaml(github_prs, jira_tickets, since_date)
+        File.write(filename, yaml_content)
+
+        puts
+        puts Rainbow("Work data saved to #{filename}").bright.green
+        puts "Total items: #{github_prs.length + jira_tickets.length}"
+      end
+
+      private
+
+      def generate_yaml(github_prs, jira_tickets, since_date)
+        data = {
+          "metadata" => {
+            "generated_at" => Time.now.strftime("%Y-%m-%d %H:%M:%S"),
+            "since_date" => since_date ? since_date.strftime("%Y-%m-%d") : (Date.today - 30).strftime("%Y-%m-%d"),
+            "default_period" => since_date.nil?,
+            "total_items" => github_prs.length + jira_tickets.length
+          },
+          "github_prs" => github_prs.map { |pr| pr.transform_keys(&:to_s) },
+          "jira_tickets" => jira_tickets.map { |ticket| ticket.transform_keys(&:to_s) }
+        }
+
+        YAML.dump(data)
       end
     end
 

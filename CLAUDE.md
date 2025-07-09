@@ -67,7 +67,7 @@ As a user
 Given that I have saved credentials for the required APIs
 When I run the command `self-review fetch`
 Then the program fetches the Github and Jira data within the default (1 month) or requested (`--since`) time window
-And caches it to a local file `recent-work-YYMMDD-HHMMSS.md`
+And caches it to a local file `recent-work-YYMMDD-HHMMSS.yml`
 ```
 
 ### User analyzes recent work
@@ -103,12 +103,12 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Create Jira API connectivity test
   - [x] Add colored status reporting
   - [x] Handle and report API errors gracefully
-- [ ] Implement fetch command for data retrieval
-  - [ ] Create GitHub API client using Octokit
-  - [ ] Implement PR fetching with date filtering
-  - [ ] Create Jira API client
-  - [ ] Implement ticket fetching with date filtering
-  - [ ] Add caching to timestamped markdown files
+- [x] Implement fetch command for data retrieval
+  - [x] Create GitHub API client using Octokit
+  - [x] Implement PR fetching with date filtering
+  - [x] Create Jira API client
+  - [x] Implement ticket fetching with date filtering
+  - [x] Add caching to timestamped markdown files
 - [ ] Implement analyze command for LLM processing
   - [ ] Create LLM integration
   - [ ] Implement work clustering algorithm
