@@ -10,7 +10,8 @@
       "Bash(git commit:*)",
       "Bash(./bin/self-review)",
       "Bash(./bin/self-review:*)",
-      "WebFetch(domain:rubyllm.com)"
+      "WebFetch(domain:rubyllm.com)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

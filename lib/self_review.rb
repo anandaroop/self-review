@@ -121,7 +121,7 @@ module SelfReview
 
         begin
           # Test with a simple prompt
-          LLMService.client.ask("Hello, respond with just 'OK'")
+          LLMService.client(verbose: false).ask("Hello, respond with just 'OK'")
           {status: :success, message: "LLM API accessible"}
         rescue => e
           {status: :error, message: "LLM API error: #{e.message}"}
@@ -272,7 +272,9 @@ module SelfReview
     class Analyze < Dry::CLI::Command
       desc "Analyze recent work and generate summary"
 
-      def call(**)
+      option :verbose, type: :boolean, default: false, desc: "Enable verbose LLM debugging output"
+
+      def call(verbose: false, **)
         puts Rainbow("Analyzing recent work...").bright.blue
         puts
 
@@ -309,7 +311,7 @@ module SelfReview
 
         # Cluster the work using LLM
         puts "Clustering work items..."
-        clusters = LLMService.cluster_work(github_prs, jira_tickets)
+        clusters = LLMService.cluster_work(github_prs, jira_tickets, verbose: verbose)
         puts "Identified #{clusters.length} work clusters"
 
         # Add actual work items to clusters
@@ -322,7 +324,7 @@ module SelfReview
 
         # Generate accomplishment summary
         puts "Generating accomplishment summary..."
-        accomplishments = LLMService.summarize_accomplishments(clusters)
+        accomplishments = LLMService.summarize_accomplishments(clusters, verbose: verbose)
 
         # Save analysis to file
         timestamp = Time.now.strftime("%y%m%d-%H%M%S")

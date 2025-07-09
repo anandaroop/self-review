@@ -124,6 +124,7 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Implement work clustering algorithm using Claude/GPT
   - [x] Generate accomplishment summaries
   - [x] Save analysis to timestamped markdown files
+  - [x] Add --verbose flag for optional LLM debugging output
 - [ ] Add comprehensive test coverage
   - [ ] Unit tests for all commands
   - [ ] Integration tests for API clients

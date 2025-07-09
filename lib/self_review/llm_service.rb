@@ -3,13 +3,13 @@ require "ruby_llm"
 module SelfReview
   class LLMService
     class << self
-      def cluster_work(github_prs, jira_tickets)
+      def cluster_work(github_prs, jira_tickets, verbose: false)
         work_items = format_work_items(github_prs, jira_tickets)
 
         prompt = build_clustering_prompt(work_items)
 
         begin
-          response = client.ask("You are a helpful assistant that analyzes software development work and groups it into meaningful clusters.\n\n#{prompt}")
+          response = client(verbose: verbose).ask("You are a helpful assistant that analyzes software development work and groups it into meaningful clusters.\n\n#{prompt}")
 
           parse_clustering_response(response.content, work_items.length)
         rescue => e
@@ -18,11 +18,11 @@ module SelfReview
         end
       end
 
-      def summarize_accomplishments(clusters)
+      def summarize_accomplishments(clusters, verbose: false)
         prompt = build_summary_prompt(clusters)
 
         begin
-          response = client.ask("You are a helpful assistant that summarizes technical accomplishments concisely.\n\n#{prompt}")
+          response = client(verbose: verbose).ask("You are a helpful assistant that summarizes technical accomplishments concisely.\n\n#{prompt}")
 
           parse_summary_response(response.content)
         rescue => e
@@ -31,18 +31,18 @@ module SelfReview
         end
       end
 
-      def client
-        @client ||= create_client
+      def client(verbose: false)
+        create_client(verbose: verbose)
       end
 
       private
 
-      def create_client
+      def create_client(verbose: false)
         config = Config.load
 
         # Configure RubyLLM with available API keys
         RubyLLM.configure do |llm_config|
-          llm_config.log_level = :debug
+          llm_config.log_level = verbose ? :debug : :info
           if config["anthropic_api_key"] && !config["anthropic_api_key"].empty?
             llm_config.anthropic_api_key = config["anthropic_api_key"]
           end
