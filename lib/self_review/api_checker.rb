@@ -2,15 +2,25 @@ require "net/http"
 require "uri"
 require "json"
 require "base64"
+require "timeout"
 
 module SelfReview
   class ApiChecker
-    def self.check_github(token)
+    def self.check_github(token, verbose: false)
       return {status: :missing, message: "No GitHub token configured"} if token.nil? || token.empty?
 
       begin
+        if verbose
+          puts Rainbow("GitHub API: Testing connection...").yellow
+        end
+
         client = Octokit::Client.new(access_token: token)
         user = client.user
+
+        if verbose
+          puts Rainbow("GitHub API: Successfully authenticated as #{user.login}").yellow
+        end
+
         {status: :success, message: "Connected as #{user.login}"}
       rescue Octokit::Unauthorized
         {status: :error, message: "Unauthorized - check your token"}
@@ -23,11 +33,16 @@ module SelfReview
       end
     end
 
-    def self.check_jira(url, username, token)
+    def self.check_jira(url, username, token, verbose: false)
       return {status: :missing, message: "No Jira configuration found"} if url.nil? || url.empty?
 
       begin
         uri = URI.join(url, "/rest/api/2/myself")
+
+        if verbose
+          puts Rainbow("Jira API: Testing connection to #{uri}").yellow
+        end
+
         request = Net::HTTP::Get.new(uri)
         request["Authorization"] = "Basic #{Base64.strict_encode64("#{username}:#{token}")}"
         request["Accept"] = "application/json"
@@ -36,9 +51,18 @@ module SelfReview
           http.request(request)
         end
 
+        if verbose
+          puts Rainbow("Jira API: Response code: #{response.code}").yellow
+        end
+
         case response.code
         when "200"
           user_data = JSON.parse(response.body)
+
+          if verbose
+            puts Rainbow("Jira API: Successfully authenticated as #{user_data["displayName"]}").yellow
+          end
+
           {status: :success, message: "Connected as #{user_data["displayName"]}"}
         when "401"
           {status: :error, message: "Unauthorized - check your credentials"}

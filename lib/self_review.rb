@@ -54,7 +54,9 @@ module SelfReview
     class Check < Dry::CLI::Command
       desc "Check API connectivity"
 
-      def call(**)
+      option :verbose, type: :boolean, default: false, desc: "Enable verbose API logging"
+
+      def call(verbose: false, **)
         puts Rainbow("Checking API connectivity...").bright.blue
         puts
 
@@ -66,14 +68,15 @@ module SelfReview
         end
 
         # Check GitHub
-        github_result = ApiChecker.check_github(config["github_token"])
+        github_result = ApiChecker.check_github(config["github_token"], verbose: verbose)
         print_status("GitHub", github_result)
 
         # Check Jira
         jira_result = ApiChecker.check_jira(
           config["jira_url"],
           config["jira_username"],
-          config["jira_token"]
+          config["jira_token"],
+          verbose: verbose
         )
         print_status("Jira", jira_result)
 
@@ -204,8 +207,9 @@ module SelfReview
     class Fetch < Dry::CLI::Command
       desc "Fetch recent work from GitHub and Jira"
       option :since, desc: "Fetch work since this date (YYYY-MM-DD)"
+      option :verbose, type: :boolean, default: false, desc: "Enable verbose API logging"
 
-      def call(since: nil, **)
+      def call(since: nil, verbose: false, **)
         puts Rainbow("Fetching recent work...").bright.blue
         puts
 
@@ -223,7 +227,7 @@ module SelfReview
         # Fetch GitHub PRs
         if config["github_token"] && !config["github_token"].empty?
           puts "Fetching from GitHub..."
-          github_prs = GitHubClient.fetch_merged_prs(config["github_token"], since_date)
+          github_prs = GitHubClient.fetch_merged_prs(config["github_token"], since_date, verbose: verbose)
           puts "Found #{github_prs.length} merged PRs"
         end
 
@@ -234,7 +238,8 @@ module SelfReview
             config["jira_url"],
             config["jira_username"],
             config["jira_token"],
-            since_date
+            since_date,
+            verbose: verbose
           )
           puts "Found #{jira_tickets.length} completed tickets"
         end

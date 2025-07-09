@@ -3,16 +3,28 @@ require "date"
 
 module SelfReview
   class GitHubClient
-    def self.fetch_merged_prs(token, since_date = nil)
+    def self.fetch_merged_prs(token, since_date = nil, verbose: false)
       since_date ||= Date.today - 30 # Default to 1 month ago
 
       client = Octokit::Client.new(access_token: token)
       user = client.user
 
+      if verbose
+        puts Rainbow("GitHub API: Fetching user info for #{user.login}").yellow
+      end
+
       # Search for PRs authored by the user that were merged since the date
       query = "author:#{user.login} is:pr is:merged merged:>=#{since_date.strftime("%Y-%m-%d")}"
 
+      if verbose
+        puts Rainbow("GitHub API: Searching with query: #{query}").yellow
+      end
+
       results = client.search_issues(query, per_page: 100)
+
+      if verbose
+        puts Rainbow("GitHub API: Found #{results.items.length} PRs").yellow
+      end
 
       prs = results.items.map do |pr|
         {

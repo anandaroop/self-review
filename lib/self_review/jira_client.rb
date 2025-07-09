@@ -6,11 +6,15 @@ require "date"
 
 module SelfReview
   class JiraClient
-    def self.fetch_done_tickets(url, username, token, since_date = nil)
+    def self.fetch_done_tickets(url, username, token, since_date = nil, verbose: false)
       since_date ||= Date.today - 30 # Default to 1 month ago
 
       # JQL query to find tickets assigned to the user that were marked Done since the date
       jql = "assignee = currentUser() AND status = Done AND updated >= '#{since_date.strftime("%Y-%m-%d")}'"
+
+      if verbose
+        puts Rainbow("Jira API: Using JQL query: #{jql}").yellow
+      end
 
       uri = URI.join(url, "/rest/api/2/search")
       uri.query = URI.encode_www_form({
@@ -18,6 +22,10 @@ module SelfReview
         fields: "key,summary,status,updated,description,assignee,priority,issuetype",
         maxResults: 100
       })
+
+      if verbose
+        puts Rainbow("Jira API: Requesting URL: #{uri}").yellow
+      end
 
       request = Net::HTTP::Get.new(uri)
       request["Authorization"] = "Basic #{Base64.strict_encode64("#{username}:#{token}")}"
@@ -27,8 +35,17 @@ module SelfReview
         http.request(request)
       end
 
+      if verbose
+        puts Rainbow("Jira API: Response code: #{response.code}").yellow
+      end
+
       if response.code == "200"
         data = JSON.parse(response.body)
+
+        if verbose
+          puts Rainbow("Jira API: Found #{data["issues"].length} tickets").yellow
+        end
+
         tickets = data["issues"].map do |issue|
           {
             key: issue["key"],
