@@ -8,6 +8,7 @@ gem "dry-container", "~> 0.11"
 gem "dry-auto_inject", "~> 1.0"
 gem "rainbow", "~> 3.1"
 gem "octokit", "~> 6.0"
+gem "ruby_llm", "~> 1.3"
 
 group :development, :test do
   gem "rspec", "~> 3.12"

@@ -105,10 +105,12 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Create credential storage system
   - [x] Add GitHub token configuration
   - [x] Add Jira API configuration
+  - [x] Add LLM API configuration (Anthropic Claude & OpenAI GPT)
   - [x] Provide user-friendly setup instructions
 - [x] Implement check command for API connectivity
   - [x] Create GitHub API connectivity test
   - [x] Create Jira API connectivity test
+  - [x] Add LLM API connectivity test
   - [x] Add colored status reporting
   - [x] Handle and report API errors gracefully
 - [x] Implement fetch command for data retrieval
@@ -116,12 +118,12 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Implement PR fetching with date filtering
   - [x] Create Jira API client
   - [x] Implement ticket fetching with date filtering
-  - [x] Add caching to timestamped markdown files
-- [ ] Implement analyze command for LLM processing
-  - [ ] Create LLM integration
-  - [ ] Implement work clustering algorithm
-  - [ ] Generate accomplishment summaries
-  - [ ] Save analysis to timestamped files
+  - [x] Add caching to timestamped YAML files
+- [x] Implement analyze command for LLM processing
+  - [x] Create LLM integration using RubyLLM
+  - [x] Implement work clustering algorithm using Claude/GPT
+  - [x] Generate accomplishment summaries
+  - [x] Save analysis to timestamped markdown files
 - [ ] Add comprehensive test coverage
   - [ ] Unit tests for all commands
   - [ ] Integration tests for API clients

@@ -9,6 +9,7 @@ require_relative "self_review/config"
 require_relative "self_review/api_checker"
 require_relative "self_review/github_client"
 require_relative "self_review/jira_client"
+require_relative "self_review/llm_service"
 
 module SelfReview
   class Container
@@ -76,6 +77,10 @@ module SelfReview
         )
         print_status("Jira", jira_result)
 
+        # Check LLM APIs
+        llm_result = check_llm_apis(config)
+        print_status("LLM", llm_result)
+
         puts
 
         working_apis = 0
@@ -91,6 +96,11 @@ module SelfReview
           working_apis += 1 if jira_result[:status] == :success
         end
 
+        if has_llm_config?(config)
+          total_apis += 1
+          working_apis += 1 if llm_result[:status] == :success
+        end
+
         if total_apis == 0
           puts Rainbow("No APIs configured. Run 'self-review setup' first.").yellow
         elsif working_apis == total_apis
@@ -103,6 +113,25 @@ module SelfReview
       end
 
       private
+
+      def check_llm_apis(config)
+        if !has_llm_config?(config)
+          return {status: :missing, message: "No LLM API keys configured"}
+        end
+
+        begin
+          # Test with a simple prompt
+          LLMService.client.ask("Hello, respond with just 'OK'")
+          {status: :success, message: "LLM API accessible"}
+        rescue => e
+          {status: :error, message: "LLM API error: #{e.message}"}
+        end
+      end
+
+      def has_llm_config?(config)
+        (!config["anthropic_api_key"].nil? && !config["anthropic_api_key"].empty?) ||
+          (!config["openai_api_key"].nil? && !config["openai_api_key"].empty?)
+      end
 
       def print_status(service, result)
         case result[:status]
@@ -150,6 +179,20 @@ module SelfReview
           jira_token = $stdin.gets.chomp
           config["jira_token"] = jira_token
         end
+
+        puts
+        puts Rainbow("LLM Configuration").bright.yellow
+        puts "To use AI analysis, you need an API key for either Anthropic Claude or OpenAI GPT."
+        puts "Anthropic Claude API: https://console.anthropic.com/"
+        puts "OpenAI GPT API: https://platform.openai.com/api-keys"
+        puts
+        print "Anthropic API key (leave blank to skip): "
+        anthropic_key = $stdin.gets.chomp
+        config["anthropic_api_key"] = anthropic_key unless anthropic_key.empty?
+
+        print "OpenAI API key (leave blank to skip): "
+        openai_key = $stdin.gets.chomp
+        config["openai_api_key"] = openai_key unless openai_key.empty?
 
         Config.save(config)
         puts
@@ -231,7 +274,112 @@ module SelfReview
 
       def call(**)
         puts Rainbow("Analyzing recent work...").bright.blue
-        puts "This feature is not yet implemented."
+        puts
+
+        # Find the most recent work data file
+        yaml_files = Dir.glob("recent-work-*.yml").sort.reverse
+
+        if yaml_files.empty?
+          puts Rainbow("No work data found. Run 'self-review fetch' first.").red
+          return
+        end
+
+        latest_file = yaml_files.first
+        puts "Using data from: #{latest_file}"
+
+        # Load and parse the YAML data
+        begin
+          data = YAML.load_file(latest_file)
+          github_prs = data["github_prs"] || []
+          jira_tickets = data["jira_tickets"] || []
+
+          puts "Found #{github_prs.length} GitHub PRs and #{jira_tickets.length} Jira tickets"
+          puts
+        rescue => e
+          puts Rainbow("Error loading work data: #{e.message}").red
+          return
+        end
+
+        # Check LLM configuration
+        config = Config.load
+        if !has_llm_config?(config)
+          puts Rainbow("No LLM API keys configured. Run 'self-review setup' first.").red
+          return
+        end
+
+        # Cluster the work using LLM
+        puts "Clustering work items..."
+        clusters = LLMService.cluster_work(github_prs, jira_tickets)
+        puts "Identified #{clusters.length} work clusters"
+
+        # Add actual work items to clusters
+        all_items = github_prs + jira_tickets
+        clusters.each do |cluster|
+          cluster[:items] = cluster[:item_numbers].map do |num|
+            all_items[num - 1] if num <= all_items.length
+          end.compact
+        end
+
+        # Generate accomplishment summary
+        puts "Generating accomplishment summary..."
+        accomplishments = LLMService.summarize_accomplishments(clusters)
+
+        # Save analysis to file
+        timestamp = Time.now.strftime("%y%m%d-%H%M%S")
+        filename = "analysis-#{timestamp}.md"
+
+        analysis_content = generate_analysis_markdown(data, clusters, accomplishments)
+        File.write(filename, analysis_content)
+
+        puts
+        puts Rainbow("Analysis saved to #{filename}").bright.green
+        puts "#{clusters.length} clusters identified with #{accomplishments.length} key accomplishments"
+      end
+
+      private
+
+      def has_llm_config?(config)
+        (!config["anthropic_api_key"].nil? && !config["anthropic_api_key"].empty?) ||
+          (!config["openai_api_key"].nil? && !config["openai_api_key"].empty?)
+      end
+
+      def generate_analysis_markdown(data, clusters, accomplishments)
+        metadata = data["metadata"] || {}
+
+        content = []
+        content << "# Work Analysis"
+        content << ""
+        content << "Generated: #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
+        content << "Data period: #{metadata["since_date"]} to #{metadata["generated_at"]&.split(" ")&.first}"
+        content << "Total items analyzed: #{metadata["total_items"]}"
+        content << ""
+
+        content << "## Key Accomplishments"
+        content << ""
+        accomplishments.each do |accomplishment|
+          content << "- #{accomplishment}"
+        end
+        content << ""
+
+        content << "## Work Clusters"
+        content << ""
+        clusters.each_with_index do |cluster, index|
+          content << "### #{index + 1}. #{cluster[:name]}"
+          content << ""
+          content << cluster[:description]
+          content << ""
+          content << "**Items (#{cluster[:items].length}):**"
+          cluster[:items].each do |item|
+            if item["title"]
+              content << "- #{item["title"]}"
+            elsif item["summary"]
+              content << "- #{item["key"]}: #{item["summary"]}"
+            end
+          end
+          content << ""
+        end
+
+        content.join("\n")
       end
     end
   end
