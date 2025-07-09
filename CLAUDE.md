@@ -98,11 +98,11 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Add GitHub token configuration
   - [x] Add Jira API configuration
   - [x] Provide user-friendly setup instructions
-- [ ] Implement check command for API connectivity
-  - [ ] Create GitHub API connectivity test
-  - [ ] Create Jira API connectivity test
-  - [ ] Add colored status reporting
-  - [ ] Handle and report API errors gracefully
+- [x] Implement check command for API connectivity
+  - [x] Create GitHub API connectivity test
+  - [x] Create Jira API connectivity test
+  - [x] Add colored status reporting
+  - [x] Handle and report API errors gracefully
 - [ ] Implement fetch command for data retrieval
   - [ ] Create GitHub API client using Octokit
   - [ ] Implement PR fetching with date filtering
