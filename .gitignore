@@ -1,0 +1,25 @@
+# Generated work data files
+recent-work-*.yml
+recent-work-*.md
+
+# Generated analysis files
+analysis-*.md
+
+# Ruby/Bundler files
+.bundle/
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local configuration
+.env
+.env.local
