@@ -74,15 +74,15 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
 
 ## Planning Checklist
 
-- [ ] Setup the skeleton of the CLI
-  - [ ] Create Ruby project structure (Gemfile, bin/, lib/, spec/)
-  - [ ] Setup Dry framework foundation
-  - [ ] Create executable script in bin/self-review
-  - [ ] Configure StandardRB and RSpec
-- [ ] Implement help command functionality
-  - [ ] Create command router/dispatcher
-  - [ ] Implement help text display
-  - [ ] Add colored terminal output
+- [x] Setup the skeleton of the CLI
+  - [x] Create Ruby project structure (Gemfile, bin/, lib/, spec/)
+  - [x] Setup Dry framework foundation
+  - [x] Create executable script in bin/self-review
+  - [x] Configure StandardRB and RSpec
+- [x] Implement help command functionality
+  - [x] Create command router/dispatcher
+  - [x] Implement help text display
+  - [x] Add colored terminal output
 - [ ] Implement setup command for credential management
   - [ ] Create credential storage system
   - [ ] Add GitHub token configuration

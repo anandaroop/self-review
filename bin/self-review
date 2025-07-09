@@ -3,4 +3,9 @@
 require "bundler/setup"
 require_relative "../lib/self_review"
 
-Dry::CLI.new(SelfReview::CLI).call
+# Show help by default if no command is provided
+if ARGV.empty?
+  SelfReview::Commands::Help.new.call
+else
+  Dry::CLI.new(SelfReview::CLI).call
+end
