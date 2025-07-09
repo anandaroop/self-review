@@ -83,11 +83,11 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Create command router/dispatcher
   - [x] Implement help text display
   - [x] Add colored terminal output
-- [ ] Implement setup command for credential management
-  - [ ] Create credential storage system
-  - [ ] Add GitHub token configuration
-  - [ ] Add Jira API configuration
-  - [ ] Provide user-friendly setup instructions
+- [x] Implement setup command for credential management
+  - [x] Create credential storage system
+  - [x] Add GitHub token configuration
+  - [x] Add Jira API configuration
+  - [x] Provide user-friendly setup instructions
 - [ ] Implement fetch command for data retrieval
   - [ ] Create GitHub API client using Octokit
   - [ ] Implement PR fetching with date filtering
