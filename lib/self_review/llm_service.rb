@@ -42,6 +42,7 @@ module SelfReview
 
         # Configure RubyLLM with available API keys
         RubyLLM.configure do |llm_config|
+          llm_config.log_level = :debug
           if config["anthropic_api_key"] && !config["anthropic_api_key"].empty?
             llm_config.anthropic_api_key = config["anthropic_api_key"]
           end
@@ -67,20 +68,20 @@ module SelfReview
         github_prs.each do |pr|
           items << {
             type: "GitHub PR",
-            title: pr[:title],
-            description: pr[:body] || "",
-            url: pr[:url],
-            date: pr[:merged_at]
+            title: pr["title"],
+            description: pr["body"] || "",
+            url: pr["url"],
+            date: pr["merged_at"]
           }
         end
 
         jira_tickets.each do |ticket|
           items << {
             type: "Jira Ticket",
-            title: "#{ticket[:key]}: #{ticket[:summary]}",
-            description: ticket[:description] || "",
-            url: ticket[:url],
-            date: ticket[:updated]
+            title: "#{ticket["key"]}: #{ticket["summary"]}",
+            description: ticket["description"] || "",
+            url: ticket["url"],
+            date: ticket["updated"]
           }
         end
 
@@ -89,7 +90,16 @@ module SelfReview
 
       def build_clustering_prompt(work_items)
         items_text = work_items.map.with_index(1) do |item, index|
-          "#{index}. #{item[:type]}: #{item[:title]}\n   Description: #{item[:description].strip[0..200]}..."
+          description = item[:description].to_s.strip
+          description_text = if description.empty?
+            "No description provided"
+          else
+            # Truncate description but keep it meaningful
+            truncated = description[0..500]
+            truncated += "..." if description.length > 500
+            truncated
+          end
+          "#{index}. #{item[:type]}: #{item[:title]}\n   Description: #{description_text}"
         end.join("\n\n")
 
         <<~PROMPT

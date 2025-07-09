@@ -13,4 +13,5 @@ gem "ruby_llm", "~> 1.3"
 group :development, :test do
   gem "rspec", "~> 3.12"
   gem "standard", "~> 1.0"
+  gem "debug", ">= 1.0.0"
 end
