@@ -75,3 +75,32 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
 ## Planning Checklist
 
 - [ ] Setup the skeleton of the CLI
+  - [ ] Create Ruby project structure (Gemfile, bin/, lib/, spec/)
+  - [ ] Setup Dry framework foundation
+  - [ ] Create executable script in bin/self-review
+  - [ ] Configure StandardRB and RSpec
+- [ ] Implement help command functionality
+  - [ ] Create command router/dispatcher
+  - [ ] Implement help text display
+  - [ ] Add colored terminal output
+- [ ] Implement setup command for credential management
+  - [ ] Create credential storage system
+  - [ ] Add GitHub token configuration
+  - [ ] Add Jira API configuration
+  - [ ] Provide user-friendly setup instructions
+- [ ] Implement fetch command for data retrieval
+  - [ ] Create GitHub API client using Octokit
+  - [ ] Implement PR fetching with date filtering
+  - [ ] Create Jira API client
+  - [ ] Implement ticket fetching with date filtering
+  - [ ] Add caching to timestamped markdown files
+- [ ] Implement analyze command for LLM processing
+  - [ ] Create LLM integration
+  - [ ] Implement work clustering algorithm
+  - [ ] Generate accomplishment summaries
+  - [ ] Save analysis to timestamped files
+- [ ] Add comprehensive test coverage
+  - [ ] Unit tests for all commands
+  - [ ] Integration tests for API clients
+  - [ ] Test credential management
+  - [ ] Test file I/O operations
