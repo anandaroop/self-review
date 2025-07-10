@@ -137,7 +137,7 @@ module SelfReview
         end.join("\n\n")
 
         <<~PROMPT
-          Please analyze the following work items and group them into 3-5 meaningful clusters based on themes, projects, or types of work:
+          Please analyze the following work items and group them into 3-7 meaningful clusters based on themes, projects, or types of work:
 
           #{items_text}
 
@@ -145,6 +145,10 @@ module SelfReview
           1. A descriptive name for the cluster
           2. A brief description of what the cluster represents
           3. The numbers of the work items that belong to this cluster
+
+          If there are some work items that seem like true outliers, you may create a "Miscellaneous" cluster for them.
+
+          You MUST ensure that every work item is assigned to a cluster.
 
           Format your response as JSON with this structure:
           {
@@ -169,7 +173,7 @@ module SelfReview
 
           #{clusters_text}
 
-          Create 3-5 bullet points that highlight key accomplishments and impact. Focus on:
+          Create 3-7 bullet points that highlight key accomplishments and impact. Focus on:
           - What was built or improved
           - Problems solved
           - Value delivered
