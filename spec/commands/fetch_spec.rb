@@ -41,8 +41,8 @@ RSpec.describe SelfReview::Commands::Fetch do
     end
 
     it "handles date filtering with since parameter" do
-      expect(SelfReview::GitHubClient).to receive(:fetch_merged_prs).with("test_token", Date.parse("2024-01-01")).and_return([])
-      allow(SelfReview::JiraClient).to receive(:fetch_done_tickets).and_return([])
+      expect(SelfReview::GitHubClient).to receive(:fetch_merged_prs).with("test_token", Date.parse("2024-01-01"), Date.today, verbose: false).and_return([])
+      allow(SelfReview::JiraClient).to receive(:fetch_done_tickets).with(nil, nil, nil, Date.parse("2024-01-01"), Date.today, verbose: false).and_return([])
       subject.call(since: "2024-01-01")
     end
   end
