@@ -7,5 +7,17 @@ require_relative "../lib/self_review"
 if ARGV.empty?
   SelfReview::Commands::Help.new.call
 else
-  Dry::CLI.new(SelfReview::CLI).call
+  # Check if the first argument is a natural language date range
+  first_arg = ARGV[0]
+  known_commands = ["help", "setup", "check", "fetch", "analyze", "h", "--help"]
+  
+  if !known_commands.include?(first_arg) && !first_arg.start_with?("-")
+    # Treat as natural language date range - run fetch + analyze
+    verbose = ARGV.include?("--verbose")
+    command = SelfReview::Commands::AutoAnalyze.new
+    command.call(date_range: first_arg, verbose: verbose)
+  else
+    # Use normal Dry::CLI behavior
+    Dry::CLI.new(SelfReview::CLI).call
+  end
 end

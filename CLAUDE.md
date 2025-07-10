@@ -143,6 +143,11 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Maintain backward compatibility with --since=YYYY-MM-DD
   - [x] Include current date context in LLM prompts
   - [x] Handle edge cases and validation
+- [x] Implement one-liner fetch+analyze command
+  - [x] Create AutoAnalyze command combining fetch and analyze
+  - [x] Add custom routing in bin/self-review for natural language inputs
+  - [x] Maintain backward compatibility with all existing commands
+  - [x] Update help text to showcase one-liner functionality
 - [ ] Add comprehensive test coverage
   - [ ] Unit tests for all commands
   - [ ] Integration tests for API clients

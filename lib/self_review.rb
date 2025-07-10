@@ -32,7 +32,7 @@ module SelfReview
       def call(**)
         puts Rainbow("self-review").bright.blue
         puts
-        puts "Usage: self-review [COMMAND]"
+        puts "Usage: self-review [COMMAND|DATE_RANGE]"
         puts
         puts Rainbow("Commands:").bright
         puts "  help     Display this help message"
@@ -41,15 +41,22 @@ module SelfReview
         puts "  fetch    Fetch recent work from GitHub and Jira"
         puts "  analyze  Analyze recent work and generate summary"
         puts
+        puts Rainbow("Quick Analysis:").bright
+        puts "  \"DATE_RANGE\"  Fetch and analyze in one step (e.g., \"last 3 months\")"
+        puts
         puts Rainbow("Examples:").bright
         puts "  self-review help"
         puts "  self-review setup"
         puts "  self-review check"
         puts "  self-review fetch --since=2024-01-01"
         puts "  self-review fetch \"last 3 months\""
-        puts "  self-review fetch \"q2 of this year\""
         puts "  self-review analyze"
         puts "  self-review analyze --display analysis-250709-224154.md"
+        puts
+        puts Rainbow("Quick Examples:").bright
+        puts "  self-review \"last 3 months\""
+        puts "  self-review \"q2 of this year\""
+        puts "  self-review \"first half of 2025\""
         puts
         puts Rainbow("For more information, visit:").bright
         puts "https://github.com/username/self-review"
@@ -470,6 +477,28 @@ module SelfReview
         end
 
         content.join("\n")
+      end
+    end
+
+    class AutoAnalyze < Dry::CLI::Command
+      desc "Fetch and analyze work for a given date range"
+      argument :date_range, required: true, desc: "Natural language date range (e.g., 'last 3 months', 'q2 of this year')"
+      option :verbose, type: :boolean, default: false, desc: "Enable verbose output for all operations"
+
+      def call(date_range:, verbose: false, **)
+        puts Rainbow("🚀 Running fetch + analyze for: #{date_range}").bright.blue
+        puts
+
+        # Step 1: Fetch the data
+        fetch_command = Commands::Fetch.new
+        fetch_command.call(date_range: date_range, verbose: verbose)
+
+        puts
+        puts Rainbow("=" * 50).bright.cyan
+
+        # Step 2: Analyze the data
+        analyze_command = Commands::Analyze.new
+        analyze_command.call(verbose: verbose)
       end
     end
   end
