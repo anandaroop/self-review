@@ -11,7 +11,8 @@
       "Bash(./bin/self-review)",
       "Bash(./bin/self-review:*)",
       "WebFetch(domain:rubyllm.com)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
