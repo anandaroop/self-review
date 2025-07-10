@@ -10,6 +10,7 @@ require_relative "self_review/api_checker"
 require_relative "self_review/github_client"
 require_relative "self_review/jira_client"
 require_relative "self_review/llm_service"
+require_relative "self_review/markdown_renderer"
 
 module SelfReview
   class Container
@@ -45,6 +46,7 @@ module SelfReview
         puts "  self-review check"
         puts "  self-review fetch --since=2024-01-01"
         puts "  self-review analyze"
+        puts "  self-review analyze --display analysis-250709-224154.md"
         puts
         puts Rainbow("For more information, visit:").bright
         puts "https://github.com/username/self-review"
@@ -278,8 +280,15 @@ module SelfReview
       desc "Analyze recent work and generate summary"
 
       option :verbose, type: :boolean, default: false, desc: "Enable verbose LLM debugging output"
+      option :display, type: :string, desc: "Display existing analysis file (provide filename)"
 
-      def call(verbose: false, **)
+      def call(verbose: false, display: nil, **)
+        # If display option is provided, just render the existing file
+        if display
+          display_analysis_file(display)
+          return
+        end
+
         puts Rainbow("Analyzing recent work...").bright.blue
         puts
 
@@ -341,9 +350,29 @@ module SelfReview
         puts
         puts Rainbow("Analysis saved to #{filename}").bright.green
         puts "#{clusters.length} clusters identified with #{accomplishments.length} key accomplishments"
+        puts
+        puts Rainbow("=" * 50).bright.cyan
+        puts Rainbow("ANALYSIS RESULTS").bright.cyan.bold
+        puts Rainbow("=" * 50).bright.cyan
+        puts
+        puts MarkdownRenderer.render(analysis_content)
       end
 
       private
+
+      def display_analysis_file(filename)
+        unless File.exist?(filename)
+          puts Rainbow("File not found: #{filename}").red
+          return
+        end
+
+        content = File.read(filename)
+        puts Rainbow("=" * 50).bright.cyan
+        puts Rainbow("ANALYSIS RESULTS").bright.cyan.bold
+        puts Rainbow("=" * 50).bright.cyan
+        puts
+        puts MarkdownRenderer.render(content)
+      end
 
       def has_llm_config?(config)
         (!config["anthropic_api_key"].nil? && !config["anthropic_api_key"].empty?) ||
