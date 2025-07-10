@@ -6,11 +6,12 @@ require "date"
 
 module SelfReview
   class JiraClient
-    def self.fetch_done_tickets(url, username, token, since_date = nil, verbose: false)
+    def self.fetch_done_tickets(url, username, token, since_date = nil, end_date = nil, verbose: false)
       since_date ||= Date.today - 30 # Default to 1 month ago
+      end_date ||= Date.today
 
-      # JQL query to find tickets assigned to the user that were marked Done since the date
-      jql = "assignee = currentUser() AND status = Done AND updated >= '#{since_date.strftime("%Y-%m-%d")}'"
+      # JQL query to find tickets assigned to the user that were marked Done within the date range
+      jql = "assignee = currentUser() AND status = Done AND updated >= '#{since_date.strftime("%Y-%m-%d")}' AND updated <= '#{end_date.strftime("%Y-%m-%d")}'"
 
       if verbose
         puts Rainbow("Jira API: Using JQL query: #{jql}").yellow

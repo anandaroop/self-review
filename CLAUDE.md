@@ -78,6 +78,17 @@ Then the program fetches the Github and Jira data within the default (1 month) o
 And caches it to a local file `recent-work-YYMMDD-HHMMSS.yml`
 ```
 
+### User fetches recent work within a natural language date range
+
+```
+As a user
+Given that I have saved credentials for the required APIs
+When I run a command with a natural language date range e.g. `self-review fetch "last 3 months"` or `self-review fetch "first half of 2025"` or `self-review fetch "q2 of this year"`
+Then the program parses that natural language into a structured date range
+And fetches the Github and Jira data within that time window
+And caches it to a local file `recent-work-YYMMDD-HHMMSS.yml`
+```
+
 ### User analyzes recent work
 
 ```
@@ -125,6 +136,13 @@ And saves the clusters and accomplishments to a local file `analysis-YYMMDD-HHMM
   - [x] Generate accomplishment summaries
   - [x] Save analysis to timestamped markdown files
   - [x] Add --verbose flag for optional LLM debugging output
+  - [x] Add terminal markdown rendering for analysis output
+- [x] Implement natural language date parsing for fetch command
+  - [x] Create DateParser service with LLM integration
+  - [x] Add support for natural language date ranges
+  - [x] Maintain backward compatibility with --since=YYYY-MM-DD
+  - [x] Include current date context in LLM prompts
+  - [x] Handle edge cases and validation
 - [ ] Add comprehensive test coverage
   - [ ] Unit tests for all commands
   - [ ] Integration tests for API clients

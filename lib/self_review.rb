@@ -11,6 +11,7 @@ require_relative "self_review/github_client"
 require_relative "self_review/jira_client"
 require_relative "self_review/llm_service"
 require_relative "self_review/markdown_renderer"
+require_relative "self_review/date_parser"
 
 module SelfReview
   class Container
@@ -45,6 +46,8 @@ module SelfReview
         puts "  self-review setup"
         puts "  self-review check"
         puts "  self-review fetch --since=2024-01-01"
+        puts "  self-review fetch \"last 3 months\""
+        puts "  self-review fetch \"q2 of this year\""
         puts "  self-review analyze"
         puts "  self-review analyze --display analysis-250709-224154.md"
         puts
@@ -208,10 +211,11 @@ module SelfReview
 
     class Fetch < Dry::CLI::Command
       desc "Fetch recent work from GitHub and Jira"
-      option :since, desc: "Fetch work since this date (YYYY-MM-DD)"
+      argument :date_range, required: false, desc: "Natural language date range (e.g., 'last 3 months', 'q2 of this year')"
+      option :since, desc: "Fetch work since this date (YYYY-MM-DD format)"
       option :verbose, type: :boolean, default: false, desc: "Enable verbose API logging"
 
-      def call(since: nil, verbose: false, **)
+      def call(date_range: nil, since: nil, verbose: false, **)
         puts Rainbow("Fetching recent work...").bright.blue
         puts
 
@@ -222,14 +226,28 @@ module SelfReview
           return
         end
 
-        since_date = since ? Date.parse(since) : nil
+        # Parse the date range - prioritize positional argument over --since option
+        date_input = date_range || since
+        parsed_date_range = parse_date_range(date_input, verbose)
+        since_date = parsed_date_range[:start_date]
+        end_date = parsed_date_range[:end_date]
+
+        # Display the parsed date range to user
+        if date_input
+          puts "Date range: #{since_date.strftime("%Y-%m-%d")} to #{end_date.strftime("%Y-%m-%d")}"
+          if parsed_date_range[:explanation]
+            puts Rainbow("Interpreted as: #{parsed_date_range[:explanation]}").faint
+          end
+          puts
+        end
+
         github_prs = []
         jira_tickets = []
 
         # Fetch GitHub PRs
         if config["github_token"] && !config["github_token"].empty?
           puts "Fetching from GitHub..."
-          github_prs = GitHubClient.fetch_merged_prs(config["github_token"], since_date, verbose: verbose)
+          github_prs = GitHubClient.fetch_merged_prs(config["github_token"], since_date, end_date, verbose: verbose)
           puts "Found #{github_prs.length} merged PRs"
         end
 
@@ -241,6 +259,7 @@ module SelfReview
             config["jira_username"],
             config["jira_token"],
             since_date,
+            end_date,
             verbose: verbose
           )
           puts "Found #{jira_tickets.length} completed tickets"
@@ -250,7 +269,7 @@ module SelfReview
         timestamp = Time.now.strftime("%y%m%d-%H%M%S")
         filename = "recent-work-#{timestamp}.yml"
 
-        yaml_content = generate_yaml(github_prs, jira_tickets, since_date)
+        yaml_content = generate_yaml(github_prs, jira_tickets, parsed_date_range)
         File.write(filename, yaml_content)
 
         puts
@@ -260,12 +279,40 @@ module SelfReview
 
       private
 
-      def generate_yaml(github_prs, jira_tickets, since_date)
+      def parse_date_range(date_input, verbose)
+        if date_input
+          begin
+            DateParser.parse(date_input, verbose: verbose)
+          rescue DateParser::ParseError => e
+            puts Rainbow("Error parsing date: #{e.message}").red
+            puts Rainbow("Using default range (last 30 days)").yellow
+            {
+              start_date: Date.today - 30,
+              end_date: Date.today,
+              source: "fallback",
+              confidence: "low"
+            }
+          end
+        else
+          # Default to last 30 days
+          {
+            start_date: Date.today - 30,
+            end_date: Date.today,
+            source: "default",
+            confidence: "high"
+          }
+        end
+      end
+
+      def generate_yaml(github_prs, jira_tickets, date_range)
         data = {
           "metadata" => {
             "generated_at" => Time.now.strftime("%Y-%m-%d %H:%M:%S"),
-            "since_date" => since_date ? since_date.strftime("%Y-%m-%d") : (Date.today - 30).strftime("%Y-%m-%d"),
-            "default_period" => since_date.nil?,
+            "start_date" => date_range[:start_date].strftime("%Y-%m-%d"),
+            "end_date" => date_range[:end_date].strftime("%Y-%m-%d"),
+            "date_source" => date_range[:source],
+            "date_confidence" => date_range[:confidence],
+            "date_explanation" => date_range[:explanation],
             "total_items" => github_prs.length + jira_tickets.length
           },
           "github_prs" => github_prs.map { |pr| pr.transform_keys(&:to_s) },
@@ -386,7 +433,14 @@ module SelfReview
         content << "# Work Analysis"
         content << ""
         content << "Generated: #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"
-        content << "Data period: #{metadata["since_date"]} to #{metadata["generated_at"]&.split(" ")&.first}"
+
+        # Handle both old and new metadata formats
+        if metadata["start_date"] && metadata["end_date"]
+          content << "Data period: #{metadata["start_date"]} to #{metadata["end_date"]}"
+        elsif metadata["since_date"]
+          content << "Data period: #{metadata["since_date"]} to #{metadata["generated_at"]&.split(" ")&.first}"
+        end
+
         content << "Total items analyzed: #{metadata["total_items"]}"
         content << ""
 
