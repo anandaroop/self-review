@@ -58,7 +58,14 @@ module SelfReview
 
         # Configure RubyLLM with available API keys
         RubyLLM.configure do |llm_config|
-          llm_config.log_level = verbose ? :debug : :info
+          llm_config.logger = Logger.new(
+            $stdout,
+            progname: "RubyLLM",
+            level: verbose ? :debug : :info,
+            formatter: proc do |severity, datetime, progname, msg|
+              Rainbow("#{datetime.iso8601} [#{progname}] #{severity}: #{msg}\n").faint
+            end
+          )
           if config["anthropic_api_key"] && !config["anthropic_api_key"].empty?
             llm_config.anthropic_api_key = config["anthropic_api_key"]
           end
