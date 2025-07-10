@@ -9,7 +9,15 @@ module SelfReview
         prompt = build_clustering_prompt(work_items)
 
         begin
+          if verbose
+            puts Rainbow("LLM: Sending clustering request to #{determine_provider}...").yellow
+          end
+
           response = client(verbose: verbose).ask("You are a helpful assistant that analyzes software development work and groups it into meaningful clusters.\n\n#{prompt}")
+
+          if verbose
+            puts Rainbow("LLM: Received clustering response (#{response.content.length} chars)").yellow
+          end
 
           parse_clustering_response(response.content, work_items.length)
         rescue => e
@@ -22,7 +30,15 @@ module SelfReview
         prompt = build_summary_prompt(clusters)
 
         begin
+          if verbose
+            puts Rainbow("LLM: Sending summary request to #{determine_provider}...").yellow
+          end
+
           response = client(verbose: verbose).ask("You are a helpful assistant that summarizes technical accomplishments concisely.\n\n#{prompt}")
+
+          if verbose
+            puts Rainbow("LLM: Received summary response (#{response.content.length} chars)").yellow
+          end
 
           parse_summary_response(response.content)
         rescue => e
@@ -59,6 +75,17 @@ module SelfReview
           RubyLLM.chat(provider: :openai, model: "gpt-4-turbo-preview")
         else
           raise "No LLM API keys configured. Run 'self-review setup' to configure."
+        end
+      end
+
+      def determine_provider
+        config = Config.load
+        if config["anthropic_api_key"] && !config["anthropic_api_key"].empty?
+          "Anthropic Claude"
+        elsif config["openai_api_key"] && !config["openai_api_key"].empty?
+          "OpenAI GPT"
+        else
+          "Unknown"
         end
       end
 
