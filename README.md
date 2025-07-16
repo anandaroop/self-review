@@ -58,3 +58,6 @@ The results will be dumped to a local yaml file, but the program is not currentl
 ./bin/self-review "1 week" # or just start summarizing
 ```
 
+## Claude stuff
+
+See [the first commit](https://github.com/anandaroop/self-review/commit/386d7205c8704f546c8ef7cdab74d9d3f474cb31), which sets up the CLAUDE.md file that largely guided the development of this tool. Mostly Claude working TDD style, with me steering & nudging as needed.
