@@ -138,9 +138,14 @@ module SelfReview
           content << "**Items (#{cluster[:items].length}):**"
           cluster[:items].each do |item|
             if item["title"]
-              content << "- #{item["title"]}"
+              # GitHub PR with clickable link icon
+              link_icon = TerminalLink.link(item["url"], " » ")
+              repo_info = " (#{item["repository"]})" if item["repository"]
+              content << "- #{item["title"]}#{repo_info} #{link_icon}"
             elsif item["summary"]
-              content << "- #{item["key"]}: #{item["summary"]}"
+              # Jira ticket with clickable link icon
+              link_icon = TerminalLink.link(item["url"], " » ")
+              content << "- #{item["key"]}: #{item["summary"]} #{link_icon}"
             end
           end
           content << ""
