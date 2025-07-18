@@ -34,7 +34,7 @@ RSpec.describe SelfReview::GitHubClient do
 
       before do
         expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
-        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100).and_return(search_results)
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(search_results)
       end
 
       it "returns formatted PR data" do
@@ -64,7 +64,7 @@ RSpec.describe SelfReview::GitHubClient do
 
       it "constructs correct search query" do
         expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
-        expect(mock_client).to receive(:search_issues).with(expected_query, per_page: 100).and_return(search_results)
+        expect(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(search_results)
 
         described_class.fetch_merged_prs(token, since_date, end_date)
       end
@@ -79,7 +79,7 @@ RSpec.describe SelfReview::GitHubClient do
       before do
         allow(Date).to receive(:today).and_return(Date.new(2024, 1, 31))
         expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
-        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100).and_return(double("SearchResults", items: []))
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(double("SearchResults", items: []))
       end
 
       it "uses default date range when not provided" do
@@ -116,19 +116,110 @@ RSpec.describe SelfReview::GitHubClient do
 
     context "with verbose logging" do
       before do
-        allow(mock_client).to receive(:search_issues).and_return(double("SearchResults", items: []))
+        allow(mock_client).to receive(:search_issues).with(anything, per_page: 100, page: 1).and_return(double("SearchResults", items: []))
       end
 
       it "outputs verbose logging when enabled" do
         expect {
           described_class.fetch_merged_prs(token, since_date, end_date, verbose: true)
-        }.to output(/GitHub API: Fetching user info.*GitHub API: Searching with query.*GitHub API: Found 0 PRs/m).to_stdout
+        }.to output(/GitHub API: Fetching user info.*GitHub API: Searching with query.*GitHub API: Found 0 total PRs/m).to_stdout
       end
 
       it "does not output verbose logging when disabled" do
         expect {
           described_class.fetch_merged_prs(token, since_date, end_date, verbose: false)
         }.not_to output(/GitHub API:/).to_stdout
+      end
+    end
+
+    context "with pagination" do
+      let(:page1_results) do
+        double("SearchResults",
+          items: Array.new(100) do |i|
+            double("PR",
+              title: "PR #{i + 1}",
+              html_url: "https://github.com/test/repo/pull/#{i + 1}",
+              repository_url: "https://api.github.com/repos/test/repo",
+              body: "Description for PR #{i + 1}",
+              pull_request: double("PullRequest", merged_at: Time.new(2024, 1, 15 - i % 10, 12, 0, 0)))
+          end)
+      end
+
+      let(:page2_results) do
+        double("SearchResults",
+          items: Array.new(50) do |i|
+            double("PR",
+              title: "PR #{i + 101}",
+              html_url: "https://github.com/test/repo/pull/#{i + 101}",
+              repository_url: "https://api.github.com/repos/test/repo",
+              body: "Description for PR #{i + 101}",
+              pull_request: double("PullRequest", merged_at: Time.new(2024, 1, 10 - i % 5, 12, 0, 0)))
+          end)
+      end
+
+      before do
+        expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(page1_results)
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 2).and_return(page2_results)
+      end
+
+      it "fetches multiple pages when results exceed 100" do
+        prs = described_class.fetch_merged_prs(token, since_date, end_date)
+
+        expect(prs.length).to eq(150)
+        # Verify we have PRs from both pages
+        pr_titles = prs.map { |pr| pr[:title] }
+        expect(pr_titles).to include("PR 1")
+        expect(pr_titles).to include("PR 100")
+        expect(pr_titles).to include("PR 101")
+        expect(pr_titles).to include("PR 150")
+      end
+
+      it "calls search_issues for each page" do
+        expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
+        expect(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(page1_results)
+        expect(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 2).and_return(page2_results)
+
+        described_class.fetch_merged_prs(token, since_date, end_date)
+      end
+
+      context "with verbose logging" do
+        it "outputs pagination progress" do
+          expect {
+            described_class.fetch_merged_prs(token, since_date, end_date, verbose: true)
+          }.to output(/Page 1 - fetched 100 PRs.*Page 2 - fetched 50 PRs.*Found 150 total PRs/m).to_stdout
+        end
+      end
+    end
+
+    context "with exactly 100 results" do
+      let(:exactly_100_results) do
+        double("SearchResults",
+          items: Array.new(100) do |i|
+            double("PR",
+              title: "PR #{i + 1}",
+              html_url: "https://github.com/test/repo/pull/#{i + 1}",
+              repository_url: "https://api.github.com/repos/test/repo",
+              body: "Description",
+              pull_request: double("PullRequest", merged_at: Time.new(2024, 1, 15, 12, 0, 0)))
+          end)
+      end
+
+      let(:empty_page2) do
+        double("SearchResults", items: [])
+      end
+
+      before do
+        expected_query = "author:testuser is:pr is:merged merged:2024-01-01..2024-01-31"
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 1).and_return(exactly_100_results)
+        allow(mock_client).to receive(:search_issues).with(expected_query, per_page: 100, page: 2).and_return(empty_page2)
+      end
+
+      it "handles exactly 100 results by checking the second page" do
+        prs = described_class.fetch_merged_prs(token, since_date, end_date)
+
+        expect(prs.length).to eq(100)
+        expect(mock_client).to have_received(:search_issues).with(anything, per_page: 100, page: 2)
       end
     end
   end
