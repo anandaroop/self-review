@@ -21,13 +21,27 @@ module SelfReview
         puts Rainbow("GitHub API: Searching with query: #{query}").yellow
       end
 
-      results = client.search_issues(query, per_page: 100)
+      # Fetch all pages of results
+      all_items = []
+      page = 1
+      loop do
+        results = client.search_issues(query, per_page: 100, page: page)
+        all_items.concat(results.items)
 
-      if verbose
-        puts Rainbow("GitHub API: Found #{results.items.length} PRs").yellow
+        if verbose
+          puts Rainbow("GitHub API: Page #{page} - fetched #{results.items.length} PRs (total so far: #{all_items.length})").yellow
+        end
+
+        # Check if there are more pages
+        break unless results.items.length == 100
+        page += 1
       end
 
-      prs = results.items.map do |pr|
+      if verbose
+        puts Rainbow("GitHub API: Found #{all_items.length} total PRs").yellow
+      end
+
+      prs = all_items.map do |pr|
         {
           title: pr.title,
           url: pr.html_url,
