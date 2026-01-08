@@ -150,7 +150,8 @@ module SelfReview
 
           You MUST ensure that every work item is assigned to a cluster.
 
-          Format your response as JSON with this structure:
+          Format your response as JSON with this structure ONLY, no markdown, no codefence just valid JSON:
+
           {
             "clusters": [
               {
@@ -183,6 +184,12 @@ module SelfReview
       end
 
       def parse_clustering_response(response, total_items)
+        # unwrap codefence if present
+        lines = response.split("\n")
+        if lines.first.strip.start_with?("```json") && lines.last.strip.start_with?("```")
+          response = lines[1..-2].join("\n")
+        end
+
         json_response = JSON.parse(response)
         json_response["clusters"].map do |cluster|
           {
