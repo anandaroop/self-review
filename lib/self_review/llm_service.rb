@@ -76,7 +76,7 @@ module SelfReview
 
         # Try Anthropic Claude first
         if config["anthropic_api_key"] && !config["anthropic_api_key"].empty?
-          RubyLLM.chat(provider: :anthropic, model: "claude-3-sonnet-20240229")
+          RubyLLM.chat(provider: :anthropic, model: "claude-sonnet-4-5-20250929")
         # Fall back to OpenAI GPT
         elsif config["openai_api_key"] && !config["openai_api_key"].empty?
           RubyLLM.chat(provider: :openai, model: "gpt-4-turbo-preview")

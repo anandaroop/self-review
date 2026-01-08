@@ -192,7 +192,7 @@ RSpec.describe SelfReview::LLMService do
       end
 
       it "creates Anthropic client" do
-        expect(RubyLLM).to receive(:chat).with(provider: :anthropic, model: "claude-3-sonnet-20240229")
+        expect(RubyLLM).to receive(:chat).with(provider: :anthropic, model: "claude-sonnet-4-5-20250929")
         described_class.client
       end
     end
