@@ -17,7 +17,7 @@ module SelfReview
         puts Rainbow("Jira API: Using JQL query: #{jql}").yellow
       end
 
-      uri = URI.join(url, "/rest/api/2/search")
+      uri = URI.join(url, "/rest/api/3/search/jql")
       uri.query = URI.encode_www_form({
         jql: jql,
         fields: "key,summary,status,updated,description,assignee,priority,issuetype",
