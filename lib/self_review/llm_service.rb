@@ -13,7 +13,7 @@ module SelfReview
             puts Rainbow("LLM: Sending clustering request to #{determine_provider}...").yellow
           end
 
-          response = client(verbose: verbose).ask("You are a helpful assistant that analyzes software development work and groups it into meaningful clusters.\n\n#{prompt}")
+          response = client(verbose: verbose).with_instructions("You are a helpful assistant that analyzes software development work and groups it into meaningful clusters.").ask(prompt)
 
           if verbose
             puts Rainbow("LLM: Received clustering response (#{response.content.length} chars)").yellow
